@@ -1,42 +1,48 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Controller, Get, UseGuards, Res, Req } from '@nestjs/common';
+import { Response, Request } from 'express';
+import { JwtGuard } from './guards/jwt.guard';
+import { GoogleGuard } from './guards/google.guard';
+import { GithubGuard } from './guards/github.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Get('google')
+  @UseGuards(GoogleGuard)
+  googleLogin() {
+    // initiates the Google OAuth2 login flow
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  @Get('google/callback')
+  @UseGuards(GoogleGuard)
+  googleLoginCallback(@Req() req: Request, @Res() res: Response) {
+    // handles the Google OAuth2 callback
+    const jwt: string = req.user as string;
+    console.log(req.user);
+
+    if (jwt) res.redirect('http://localhost:4200/login/succes/' + jwt);
+    else res.redirect('http://localhost:4200/login/failure');
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
+  @Get('github')
+  @UseGuards(GithubGuard)
+  githubLogin() {
+    // initiates the Google OAuth2 login flow
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
+  @Get('github/callback')
+  @UseGuards(GithubGuard)
+  githubLoginCallback(@Req() req: Request, @Res() res: Response) {
+    // handles the Google OAuth2 callback
+    const jwt: string = req.user as string;
+    console.log(req.user);
+
+    if (jwt) res.redirect('http://localhost:4200/login/succes/' + jwt);
+    else res.redirect('http://localhost:4200/login/failure');
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  @Get('protected')
+  @UseGuards(JwtGuard)
+  protectedResource(@Req() req: Request, @Res() res: Response) {
+    return res.json(req.user);
   }
 }

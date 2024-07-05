@@ -1,26 +1,42 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { sign } from 'jsonwebtoken';
+
+export enum Provider {
+  GOOGLE = 'google',
+  GITHUB = 'github',
+}
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+  constructor(
+    private configService: ConfigService /*private readonly usersService: UsersService*/,
+  ) {}
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async validateOAuthLogin(
+    thirdPartyProfile: any,
+    provider: Provider,
+  ): Promise<string> {
+    try {
+      // You can add some registration logic here,
+      // to register the user using their thirdPartyId (in this case their googleId)
+      // let user: IUser = await this.usersService.findOneByThirdPartyId(thirdPartyId, provider);
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+      // if (!user)
+      // user = await this.usersService.registerOAuthUser(thirdPartyId, provider);
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+      const payload = {
+        thirdPartyProfile,
+        provider,
+      };
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+      const jwt: string = sign(payload, this.configService.get('JWT_SECRET'), {
+        expiresIn: 3600,
+      });
+
+      return jwt;
+    } catch (err) {
+      throw new InternalServerErrorException('validateOAuthLogin', err.message);
+    }
   }
 }
